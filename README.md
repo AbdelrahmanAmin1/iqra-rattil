@@ -2,6 +2,8 @@
 
 Backend-driven Arabic LMS with React/Vite frontend, Express API, Prisma, PostgreSQL, in-app notifications, and real-time teacher-student chat.
 
+[Read the portfolio case study](./CASE_STUDY.md)
+
 ## Frontend
 
 ```bash

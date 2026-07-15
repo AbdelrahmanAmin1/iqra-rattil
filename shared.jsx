@@ -27,6 +27,10 @@ export function Icon({ name, size = 20, color = "currentColor", stroke = 2 }) {
     upload: <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="M17 8l-5-5-5 5" /><path d="M12 3v12" /></>,
     users: <><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></>,
     user: <><circle cx="12" cy="8" r="4" /><path d="M4 21v-1a8 8 0 0 1 16 0v1" /></>,
+    "arrow-up": <><path d="M12 19V5" /><path d="m5 12 7-7 7 7" /></>,
+    "arrow-down": <><path d="M12 5v14" /><path d="m19 12-7 7-7-7" /></>,
+    edit: <><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" /></>,
+    trash: <><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v5M14 11v5" /></>,
     settings: <><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1A2 2 0 1 1 4.5 17l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1A2 2 0 1 1 7 4.5l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1A2 2 0 1 1 19.5 7l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" /></>,
     check: <path d="M20 6L9 17l-5-5" />,
     x: <><path d="M18 6L6 18" /><path d="M6 6l12 12" /></>,
@@ -175,13 +179,17 @@ export function youtubeUrl(id) {
   return `https://www.youtube.com/watch?v=${encodeURIComponent(id)}`;
 }
 
+export function youtubeEmbedUrl(id) {
+  return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(id)}?autoplay=1&rel=0&modestbranding=1`;
+}
+
 export function mergeHomeContent(data) {
   return {
     academy: { ...ACADEMY, ...(data?.academy || {}) },
-    curriculum: data?.curriculum?.length ? data.curriculum : CURRICULUM,
-    books: data?.books?.length ? data.books : BOOKS,
-    channelVideos: data?.channelVideos?.length ? data.channelVideos : CHANNEL_VIDEOS,
-    packagePrice: data?.packagePrice || data?.academy?.packagePrice || ACADEMY.packagePrice
+    curriculum: Array.isArray(data?.curriculum) ? data.curriculum : CURRICULUM,
+    books: Array.isArray(data?.books) ? data.books : BOOKS,
+    channelVideos: Array.isArray(data?.channelVideos) ? data.channelVideos : CHANNEL_VIDEOS,
+    packagePrice: data?.packagePrice ?? data?.academy?.packagePrice ?? ACADEMY.packagePrice
   };
 }
 
@@ -219,28 +227,28 @@ export function Field({ label, children }) {
   );
 }
 
-export function BrandMark({ subtitle = ACADEMY.project, compact = false }) {
+export function BrandMark({ name = ACADEMY.name, subtitle = ACADEMY.project, compact = false }) {
   return (
     <span className="brand-mark">
       <Logo size={compact ? 38 : 44} />
       <span>
-        {compact ? "اقرأ ورتّل" : ACADEMY.name}
+        {compact ? "اقرأ ورتّل" : name}
         <span className="subtitle">{subtitle}</span>
       </span>
     </span>
   );
 }
 
-export function PublicTopbar({ onLogin }) {
+export function PublicTopbar({ onLogin, academy }) {
   return (
     <div className="topbar">
       <div className="container topbar-inner">
-        <a href="#home" aria-label="الرئيسية"><BrandMark /></a>
+        <a href="#home" aria-label="الرئيسية"><BrandMark name={academy?.name} subtitle={academy?.author ? `المشرف العام ${academy.author}` : undefined} /></a>
         <nav className="nav-links" aria-label="روابط الصفحة">
           <a className="active" href="#home">الرئيسية</a>
           <a href="#curriculum">المنهج</a>
           <a href="#books">الحقيبة</a>
-          <a href="#channel">القناة</a>
+          <a href="#outcomes">الثمرة</a>
           <a href="#contact">تواصل</a>
         </nav>
         <div className="topbar-actions">
@@ -261,6 +269,53 @@ export function SectionTitle({ eyebrow, title, body }) {
         {body ? <p>{body}</p> : null}
       </div>
     </div>
+  );
+}
+
+export function ClickToPlayVideo({ video }) {
+  const [playing, setPlaying] = React.useState(false);
+  const videoId = video?.youtubeId;
+  const thumbnail = videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : "";
+
+  return (
+    <article className="video-feature-card">
+      <div className="video-player" data-video-id={videoId || undefined}>
+        {playing && videoId ? (
+          <>
+            <iframe
+              src={youtubeEmbedUrl(videoId)}
+              title={video.title}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+              referrerPolicy="strict-origin-when-cross-origin"
+            />
+            <button type="button" className="video-close" onClick={() => setPlaying(false)} aria-label="إغلاق الفيديو" title="إغلاق الفيديو"><Icon name="x" size={16} /></button>
+          </>
+        ) : (
+          <button
+            type="button"
+            className="video-launch"
+            onClick={() => videoId && setPlaying(true)}
+            disabled={!videoId}
+            aria-label={videoId ? `تشغيل ${video.title}` : `لا يتوفر رابط لفيديو ${video.title}`}
+            style={thumbnail ? { backgroundImage: `url(${thumbnail})` } : undefined}
+          >
+            <span className="video-launch-overlay" />
+            <span className="video-play-icon"><Icon name="play" size={26} color="white" /></span>
+            <span className="video-launch-label">شاهد الفيديو</span>
+          </button>
+        )}
+      </div>
+      <div className="video-feature-copy">
+        <h3 className="f-20">{video.title}</h3>
+        {video.duration || video.views ? (
+          <div className="row mt-8">
+            {video.duration ? <span className="chip">{video.duration}</span> : null}
+            {video.views ? <span className="chip">{video.views} مشاهدة</span> : null}
+          </div>
+        ) : null}
+      </div>
+    </article>
   );
 }
 
@@ -342,14 +397,13 @@ export function BookGrid({ books = [] }) {
               <div className="book-cover" style={{ background: book.color || "var(--grad-1)" }}>{book.title}</div>
             )}
             <h3 className="f-20">{book.title}</h3>
-            <p className="muted f-14 mt-8">{book.subtitle}</p>
+            {book.subtitle ? <p className="muted f-14 mt-8">{book.subtitle}</p> : null}
             <div className="spread mt-16">
               <span className="chip">{book.level || "عام"}</span>
-              <span className="bold">{book.price ? `${book.price} جنيه` : ""}</span>
             </div>
             <div className="mt-16">
               {book.soon ? (
-                <span className="chip accent">قريبًا</span>
+                book.subtitle ? null : <span className="chip accent">تحت الطبع</span>
               ) : link ? (
                 <a className="btn ghost sm" href={link} target="_blank" rel="noreferrer">فتح الكتاب</a>
               ) : (

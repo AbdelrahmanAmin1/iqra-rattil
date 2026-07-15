@@ -62,3 +62,7 @@ export const emitToUser = (userId: string, event: string, payload: unknown) => {
 export const emitToThread = (threadId: string, event: string, payload: unknown) => {
   io?.to(`thread:${threadId}`).emit(event, payload);
 };
+
+export const emitContentUpdated = (payload: unknown) => {
+  io?.emit("content:updated", payload);
+};

@@ -363,19 +363,22 @@ model Material {
 }
 
 model Book {
-  id        String   @id @default(cuid())
-  code      String   @unique
-  title     String
-  subtitle  String?
-  color     String?
-  price     Int
-  level     String?
-  soon      Boolean  @default(false)
-  coverPath String?
-  filePath  String?
+  id           String   @id @default(cuid())
+  code         String   @unique
+  title        String
+  subtitle     String?
+  color        String?
+  price        Int      @default(0)
+  level        String?
+  soon         Boolean  @default(false)
+  displayOrder Int      @default(0)
+  coverPath    String?
+  filePath     String?
   externalUrl String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([displayOrder])
 }
 
 model ChannelVideo {
@@ -385,8 +388,11 @@ model ChannelVideo {
   views     String?
   duration  String?
   youtubeId String?
+  placement String   @default("library")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([placement])
 }
 
 model ContactLead {

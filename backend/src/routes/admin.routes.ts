@@ -7,6 +7,7 @@ import { env } from "../config/env.js";
 import { prisma } from "../prisma.js";
 import { hashPassword } from "../services/auth.service.js";
 import { notificationService } from "../services/notification.service.js";
+import { emitContentUpdated } from "../services/realtime.service.js";
 import { storageService } from "../services/storage.service.js";
 import { HttpError, ok } from "../utils/http.js";
 
@@ -42,9 +43,9 @@ const mapBook = (book: any) => ({
   title: book.title,
   subtitle: book.subtitle,
   color: book.color,
-  price: book.price,
   level: book.level,
   soon: book.soon,
+  displayOrder: book.displayOrder,
   coverPath: book.coverPath,
   filePath: book.filePath,
   externalUrl: book.externalUrl,
@@ -59,6 +60,7 @@ const mapVideo = (video: any) => ({
   views: video.views,
   duration: video.duration,
   youtubeId: video.youtubeId,
+  placement: video.placement,
   createdAt: video.createdAt,
   updatedAt: video.updatedAt
 });
@@ -388,7 +390,7 @@ adminRouter.get("/content", async (_req, res, next) => {
       }),
       prisma.lesson.count(),
       prisma.quiz.count(),
-      prisma.book.findMany({ orderBy: { code: "asc" } }),
+      prisma.book.findMany({ orderBy: [{ displayOrder: "asc" }, { createdAt: "asc" }] }),
       prisma.material.count(),
       prisma.channelVideo.findMany({ orderBy: { code: "asc" } })
     ]);
@@ -415,6 +417,7 @@ const contentNotice = async (actorId: string, title: string, body?: string) => {
       link: "/teacher"
     })
   ]);
+  emitContentUpdated({ title, body, updatedAt: new Date().toISOString() });
 };
 
 const findBook = async (idOrCode: string) => {
@@ -424,11 +427,9 @@ const findBook = async (idOrCode: string) => {
 };
 
 const bookSchema = z.object({
-  code: z.string().optional().or(z.literal("")),
   title: z.string().min(2),
   subtitle: z.string().optional().or(z.literal("")),
   color: z.string().optional().or(z.literal("")),
-  price: z.coerce.number().int().min(0).default(0),
   level: z.string().optional().or(z.literal("")),
   soon: boolish.default(false),
   externalUrl: optionalUrl
@@ -436,7 +437,7 @@ const bookSchema = z.object({
 
 adminRouter.get("/books", async (_req, res, next) => {
   try {
-    const books = await prisma.book.findMany({ orderBy: { code: "asc" } });
+    const books = await prisma.book.findMany({ orderBy: [{ displayOrder: "asc" }, { createdAt: "asc" }] });
     res.json(ok({ books: books.map(mapBook) }));
   } catch (error) {
     next(error);
@@ -449,18 +450,20 @@ adminRouter.post("/books", upload.fields([{ name: "cover", maxCount: 1 }, { name
     const files = req.files as Record<string, Express.Multer.File[]>;
     const cover = files?.cover?.[0] ? await storageService.saveFile(files.cover[0]) : null;
     const file = files?.file?.[0] ? await storageService.saveFile(files.file[0]) : null;
+    const lastBook = await prisma.book.aggregate({ _max: { displayOrder: true } });
     const book = await prisma.book.create({
       data: {
-        code: body.code || `book-${Date.now()}`,
+        code: `book-${Date.now()}`,
         title: body.title,
         subtitle: body.subtitle || null,
         color: body.color || null,
-        price: body.price,
+        price: 0,
         level: body.level || null,
         soon: body.soon,
-        externalUrl: body.externalUrl || null,
+        displayOrder: (lastBook._max.displayOrder || 0) + 1,
+        externalUrl: body.soon ? null : body.externalUrl || null,
         coverPath: cover?.publicPath || null,
-        filePath: file?.publicPath || null
+        filePath: body.soon ? null : file?.publicPath || null
       }
     });
     await contentNotice(req.user!.id, "تمت إضافة كتاب جديد", book.title);
@@ -477,19 +480,19 @@ adminRouter.patch("/books/:id", upload.fields([{ name: "cover", maxCount: 1 }, {
     const files = req.files as Record<string, Express.Multer.File[]>;
     const cover = files?.cover?.[0] ? await storageService.saveFile(files.cover[0]) : null;
     const file = files?.file?.[0] ? await storageService.saveFile(files.file[0]) : null;
+    const isSoon = body.soon ?? existing.soon;
     const book = await prisma.book.update({
       where: { id: existing.id },
       data: {
-        code: body.code || undefined,
         title: body.title,
         subtitle: body.subtitle === "" ? null : body.subtitle,
         color: body.color === "" ? null : body.color,
-        price: body.price,
+        price: 0,
         level: body.level === "" ? null : body.level,
-        soon: body.soon,
-        externalUrl: body.externalUrl === "" ? null : body.externalUrl,
+        soon: isSoon,
+        externalUrl: isSoon ? null : body.externalUrl === "" ? null : body.externalUrl,
         coverPath: cover?.publicPath,
-        filePath: file?.publicPath
+        filePath: isSoon ? null : file?.publicPath
       }
     });
     await contentNotice(req.user!.id, "تم تحديث كتاب", book.title);
@@ -499,10 +502,43 @@ adminRouter.patch("/books/:id", upload.fields([{ name: "cover", maxCount: 1 }, {
   }
 });
 
+const bookMoveSchema = z.object({ direction: z.enum(["up", "down"]) });
+
+adminRouter.post("/books/:id/move", async (req, res, next) => {
+  try {
+    const existing = await findBook(req.params.id);
+    const { direction } = bookMoveSchema.parse(req.body);
+    const books = await prisma.book.findMany({
+      orderBy: [{ displayOrder: "asc" }, { createdAt: "asc" }]
+    });
+    const index = books.findIndex((book) => book.id === existing.id);
+    const neighbor = books[direction === "up" ? index - 1 : index + 1];
+
+    if (!neighbor) {
+      return res.json(ok({ book: mapBook(existing), moved: false }));
+    }
+
+    const [book] = await prisma.$transaction([
+      prisma.book.update({ where: { id: existing.id }, data: { displayOrder: neighbor.displayOrder } }),
+      prisma.book.update({ where: { id: neighbor.id }, data: { displayOrder: existing.displayOrder } })
+    ]);
+    await contentNotice(req.user!.id, "تم تغيير ترتيب الكتب", book.title);
+    res.json(ok({ book: mapBook(book), moved: true }));
+  } catch (error) {
+    next(error);
+  }
+});
+
 adminRouter.delete("/books/:id", async (req, res, next) => {
   try {
     const existing = await findBook(req.params.id);
-    await prisma.book.delete({ where: { id: existing.id } });
+    await prisma.$transaction([
+      prisma.book.delete({ where: { id: existing.id } }),
+      prisma.book.updateMany({
+        where: { displayOrder: { gt: existing.displayOrder } },
+        data: { displayOrder: { decrement: 1 } }
+      })
+    ]);
     await contentNotice(req.user!.id, "تم حذف كتاب", existing.title);
     res.json(ok({ success: true }));
   } catch (error) {
@@ -516,7 +552,8 @@ const videoSchema = z.object({
   views: z.string().optional().or(z.literal("")),
   duration: z.string().optional().or(z.literal("")),
   youtubeId: z.string().optional().or(z.literal("")),
-  youtubeUrl: z.string().optional().or(z.literal(""))
+  youtubeUrl: z.string().optional().or(z.literal("")),
+  placement: z.enum(["testimonials", "bag", "outcomes", "library"]).default("library")
 });
 
 const extractYoutubeId = (value?: string | null) => {
@@ -534,7 +571,7 @@ const findVideo = async (idOrCode: string) => {
 
 adminRouter.get("/channel-videos", async (_req, res, next) => {
   try {
-    const videos = await prisma.channelVideo.findMany({ orderBy: { code: "asc" } });
+    const videos = await prisma.channelVideo.findMany({ orderBy: [{ placement: "asc" }, { code: "asc" }] });
     res.json(ok({ videos: videos.map(mapVideo) }));
   } catch (error) {
     next(error);
@@ -549,7 +586,8 @@ adminRouter.post("/channel-videos", validateBody(videoSchema), async (req, res, 
         title: req.body.title,
         views: req.body.views || null,
         duration: req.body.duration || null,
-        youtubeId: extractYoutubeId(req.body.youtubeUrl || req.body.youtubeId)
+        youtubeId: extractYoutubeId(req.body.youtubeUrl || req.body.youtubeId),
+        placement: req.body.placement
       }
     });
     await contentNotice(req.user!.id, "تمت إضافة فيديو جديد", video.title);
@@ -571,7 +609,8 @@ adminRouter.patch("/channel-videos/:id", validateBody(videoSchema.partial()), as
         duration: req.body.duration === "" ? null : req.body.duration,
         youtubeId: Object.prototype.hasOwnProperty.call(req.body, "youtubeUrl") || Object.prototype.hasOwnProperty.call(req.body, "youtubeId")
           ? extractYoutubeId(req.body.youtubeUrl || req.body.youtubeId)
-          : undefined
+          : undefined,
+        placement: req.body.placement
       }
     });
     await contentNotice(req.user!.id, "تم تحديث فيديو", video.title);
@@ -859,6 +898,15 @@ const settingsSchema = z.object({
   groups: z.array(z.string()).optional(),
   schedule: z.string().optional(),
   packagePrice: z.coerce.number().int().min(0).optional()
+});
+
+adminRouter.get("/settings", async (_req, res, next) => {
+  try {
+    const settings = await prisma.academySettings.findUnique({ where: { id: "default" } });
+    res.json(ok({ settings }));
+  } catch (error) {
+    next(error);
+  }
 });
 
 adminRouter.patch("/settings", validateBody(settingsSchema), async (req, res, next) => {

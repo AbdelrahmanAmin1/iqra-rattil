@@ -16,6 +16,7 @@ ENV NODE_ENV=production
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/prisma ./prisma
+COPY --from=build /app/uploads/catalog-tajweed.jfif ./uploads/catalog-tajweed.jfif
 COPY package*.json ./
 EXPOSE 4000
 CMD ["node", "dist/src/server.js"]

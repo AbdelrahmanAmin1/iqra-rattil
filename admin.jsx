@@ -10,7 +10,9 @@ export default function AdminDashboard({ session, homeResetKey }) {
   const [dashboard, setDashboard] = useState(null);
   const [error, setError] = useState("");
   const load = () => api.admin.dashboard().then(setDashboard).catch((err) => setError(err.message));
-  useEffect(load, []);
+  useEffect(() => {
+    void load();
+  }, []);
   useEffect(() => setTab("home"), [homeResetKey]);
 
   if (!dashboard && !error) return <Loading />;
@@ -190,7 +192,9 @@ function AdminApprovals({ onChanged }) {
   const [items, setItems] = useState([]);
   const [error, setError] = useState("");
   const load = () => api.admin.approvals().then((data) => setItems(data.approvals || [])).catch((err) => setError(err.message));
-  useEffect(load, []);
+  useEffect(() => {
+    void load();
+  }, []);
   const review = async (id, action) => {
     setError("");
     try {
@@ -227,7 +231,9 @@ function AdminUsers() {
   const [form, setForm] = useState({ role: "student", fullName: "", email: "", phone: "", password: "", level: "", specialty: "" });
   const [error, setError] = useState("");
   const load = () => api.admin.users(role).then((data) => setUsers(data.users || [])).catch((err) => setError(err.message));
-  useEffect(load, [role]);
+  useEffect(() => {
+    void load();
+  }, [role]);
   const create = async (event) => {
     event.preventDefault();
     setError("");
@@ -321,63 +327,159 @@ function ContentSummary({ summary }) {
 }
 
 function BookAdmin({ books, reload }) {
-  const [form, setForm] = useState({ title: "", price: 0, level: "", subtitle: "", externalUrl: "" });
+  const emptyForm = { title: "", level: "", subtitle: "", soon: false, externalUrl: "" };
+  const [form, setForm] = useState(emptyForm);
+  const [editing, setEditing] = useState(null);
   const [cover, setCover] = useState(null);
   const [file, setFile] = useState(null);
   const [error, setError] = useState("");
+  const reset = () => {
+    setForm(emptyForm);
+    setEditing(null);
+    setCover(null);
+    setFile(null);
+  };
+  const startEditing = (book) => {
+    setError("");
+    setEditing(book);
+    setForm({
+      title: book.title || "",
+      level: book.level || "",
+      subtitle: book.subtitle || "",
+      soon: Boolean(book.soon),
+      externalUrl: book.externalUrl || ""
+    });
+    setCover(null);
+    setFile(null);
+  };
   const submit = async (event) => {
     event.preventDefault();
     setError("");
     try {
-      await api.admin.createBook(asFormData(form, { cover, file }));
-      setForm({ title: "", price: 0, level: "", subtitle: "", externalUrl: "" });
-      setCover(null);
-      setFile(null);
-      reload();
+      const payload = asFormData(form, { cover, file });
+      if (editing) await api.admin.updateBook(editing.id, payload);
+      else await api.admin.createBook(payload);
+      reset();
+      await reload();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+  const move = async (book, direction) => {
+    setError("");
+    try {
+      await api.admin.moveBook(book.id, direction);
+      await reload();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+  const remove = async (book) => {
+    setError("");
+    try {
+      await api.admin.deleteBook(book.id);
+      if (editing?.id === book.id) reset();
+      await reload();
     } catch (err) {
       setError(err.message);
     }
   };
   return (
     <section className="card elev">
-      <h2>الكتب</h2>
+      <h2>{editing ? "تعديل الكتاب" : "الكتب"}</h2>
       <ErrorBanner error={error} />
       <form onSubmit={submit}>
         <Field label="العنوان"><input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} required /></Field>
-        <Field label="السعر"><input type="number" value={form.price} onChange={(event) => setForm({ ...form, price: event.target.value })} /></Field>
-        <Field label="ملف الكتاب"><input type="file" onChange={(event) => setFile(event.target.files[0])} /></Field>
-        <Field label="الغلاف"><input type="file" onChange={(event) => setCover(event.target.files[0])} /></Field>
-        <button className="btn primary">إضافة كتاب</button>
+        <Field label="المستوى أو الفئة"><input value={form.level} onChange={(event) => setForm({ ...form, level: event.target.value })} /></Field>
+        <Field label="وصف مختصر أو حالة النشر"><input value={form.subtitle} onChange={(event) => setForm({ ...form, subtitle: event.target.value })} /></Field>
+        <Field label="رابط الكتاب الخارجي"><input dir="ltr" value={form.externalUrl} onChange={(event) => setForm({ ...form, externalUrl: event.target.value })} /></Field>
+        <label className="check-row"><input type="checkbox" checked={form.soon} onChange={(event) => setForm({ ...form, soon: event.target.checked })} /> تحت الطبع</label>
+        <Field label="ملف الكتاب"><input type="file" disabled={form.soon} onChange={(event) => setFile(event.target.files[0])} /></Field>
+        <Field label="الغلاف"><input type="file" accept="image/*" onChange={(event) => setCover(event.target.files[0])} /></Field>
+        <div className="row">
+          <button className="btn primary">{editing ? "حفظ التعديلات" : "إضافة كتاب"}</button>
+          {editing ? <button type="button" className="btn ghost" onClick={reset}>إلغاء</button> : null}
+        </div>
       </form>
-      <SimpleList items={books} label={(book) => book.title} onDelete={(book) => api.admin.deleteBook(book.id).then(reload)} />
+      <div className="col mt-16">
+        {books.map((book, index) => (
+          <div key={book.id} className="spread" style={{ padding: 10, borderBottom: "1px solid var(--line)", gap: 8 }}>
+            <div>
+              <div className="bold">{index + 1}. {book.title}</div>
+              <div className="muted f-12">{book.subtitle || book.level || "بدون تصنيف"}</div>
+            </div>
+            <div className="row" style={{ gap: 6 }}>
+              <button type="button" className="btn ghost sm icon-btn" title="نقل للأعلى" aria-label="نقل للأعلى" disabled={index === 0} onClick={() => move(book, "up")}><Icon name="arrow-up" size={16} /></button>
+              <button type="button" className="btn ghost sm icon-btn" title="نقل للأسفل" aria-label="نقل للأسفل" disabled={index === books.length - 1} onClick={() => move(book, "down")}><Icon name="arrow-down" size={16} /></button>
+              <button type="button" className="btn ghost sm icon-btn" title="تعديل الكتاب" aria-label="تعديل الكتاب" onClick={() => startEditing(book)}><Icon name="edit" size={16} /></button>
+              <button type="button" className="btn ghost sm icon-btn" title="حذف الكتاب" aria-label="حذف الكتاب" onClick={() => remove(book)}><Icon name="trash" size={16} /></button>
+            </div>
+          </div>
+        ))}
+        {!books.length ? <EmptyState title="لا توجد كتب" /> : null}
+      </div>
     </section>
   );
 }
 
 function VideoAdmin({ videos, reload }) {
-  const [form, setForm] = useState({ title: "", youtubeUrl: "", duration: "" });
+  const emptyForm = { title: "", youtubeUrl: "", placement: "library" };
+  const [form, setForm] = useState(emptyForm);
+  const [editing, setEditing] = useState(null);
   const [error, setError] = useState("");
+  const reset = () => {
+    setForm(emptyForm);
+    setEditing(null);
+  };
+  const startEditing = (video) => {
+    setError("");
+    setEditing(video);
+    setForm({ title: video.title || "", youtubeUrl: video.youtubeId ? `https://www.youtube.com/watch?v=${video.youtubeId}` : "", placement: video.placement || "library" });
+  };
   const submit = async (event) => {
     event.preventDefault();
     setError("");
     try {
-      await api.admin.createVideo(form);
-      setForm({ title: "", youtubeUrl: "", duration: "" });
-      reload();
+      if (editing) await api.admin.updateVideo(editing.id, form);
+      else await api.admin.createVideo(form);
+      reset();
+      await reload();
     } catch (err) {
       setError(err.message);
     }
   };
   return (
     <section className="card elev">
-      <h2>فيديوهات القناة</h2>
+      <h2>{editing ? "تعديل الفيديو" : "فيديوهات الصفحة"}</h2>
       <ErrorBanner error={error} />
       <form onSubmit={submit}>
         <Field label="العنوان"><input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} required /></Field>
-        <Field label="رابط يوتيوب"><input dir="ltr" value={form.youtubeUrl} onChange={(event) => setForm({ ...form, youtubeUrl: event.target.value })} /></Field>
-        <button className="btn primary">إضافة فيديو</button>
+        <Field label="رابط يوتيوب"><input dir="ltr" value={form.youtubeUrl} onChange={(event) => setForm({ ...form, youtubeUrl: event.target.value })} required /></Field>
+        <Field label="مكان العرض"><select value={form.placement} onChange={(event) => setForm({ ...form, placement: event.target.value })}>
+          <option value="testimonials">قالوا عن المنهج</option>
+          <option value="bag">محتويات الحقيبة والكتب</option>
+          <option value="outcomes">ثمرة مناهج اقرأ ورتل</option>
+          <option value="library">مكتبة الفيديوهات (غير معروض)</option>
+        </select></Field>
+        <div className="row">
+          <button className="btn primary">{editing ? "حفظ التعديلات" : "إضافة فيديو"}</button>
+          {editing ? <button type="button" className="btn ghost" onClick={reset}>إلغاء</button> : null}
+        </div>
       </form>
-      <SimpleList items={videos} label={(video) => video.title} onDelete={(video) => api.admin.deleteVideo(video.id).then(reload)} />
+      <div className="col mt-16">
+        {videos.map((video) => (
+          <div key={video.id} className="spread" style={{ padding: 10, borderBottom: "1px solid var(--line)", gap: 8 }}>
+            <div>
+              <div className="bold">{video.title}</div>
+              <div className="muted f-12">{{ testimonials: "قالوا عن المنهج", bag: "محتويات الحقيبة والكتب", outcomes: "ثمرة مناهج اقرأ ورتل", library: "مكتبة الفيديوهات" }[video.placement] || "مكتبة الفيديوهات"}</div>
+            </div>
+            <div className="row" style={{ gap: 6 }}>
+              <button type="button" className="btn ghost sm icon-btn" title="تعديل الفيديو" aria-label="تعديل الفيديو" onClick={() => startEditing(video)}><Icon name="edit" size={16} /></button>
+              <button type="button" className="btn ghost sm icon-btn" title="حذف الفيديو" aria-label="حذف الفيديو" onClick={() => api.admin.deleteVideo(video.id).then(reload).catch((err) => setError(err.message))}><Icon name="trash" size={16} /></button>
+            </div>
+          </div>
+        ))}
+      </div>
     </section>
   );
 }
@@ -495,8 +597,30 @@ function AdminSettings() {
   const [form, setForm] = useState({ name: "", author: "", phone: "", packagePrice: 0, emails: "" });
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  useEffect(() => {
+    let active = true;
+    api.admin.settings()
+      .then(({ settings }) => {
+        if (!active || !settings) return;
+        setForm({
+          name: settings.name || "",
+          author: settings.author || "",
+          phone: settings.phone || "",
+          packagePrice: settings.packagePrice ?? 0,
+          emails: Array.isArray(settings.emails) ? settings.emails.join(", ") : ""
+        });
+      })
+      .catch((err) => {
+        if (active) setError(err.message);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
   const save = async (event) => {
     event.preventDefault();
+    setError("");
+    setMessage("");
     try {
       await api.admin.updateSettings({ ...form, emails: form.emails ? form.emails.split(",").map((item) => item.trim()).filter(Boolean) : [] });
       setMessage("تم الحفظ");

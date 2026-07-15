@@ -111,7 +111,7 @@ studentRouter.get("/dashboard", async (req, res, next) => {
         orderBy: { code: "asc" },
         include: { students: { where: { studentId: req.user!.id } } }
       }),
-      prisma.book.findMany({ orderBy: { code: "asc" } })
+      prisma.book.findMany({ orderBy: [{ displayOrder: "asc" }, { createdAt: "asc" }] })
     ]);
     const completed = lessons.filter((lesson) => lesson.completed).length;
     const currentLesson = lessons.find((lesson) => lesson.current) || lessons.find((lesson) => !lesson.locked) || lessons[0];
@@ -146,9 +146,9 @@ studentRouter.get("/dashboard", async (req, res, next) => {
           title: book.title,
           subtitle: book.subtitle,
           color: book.color,
-          price: book.price,
           level: book.level,
           soon: book.soon,
+          displayOrder: book.displayOrder,
           coverPath: book.coverPath,
           filePath: book.filePath,
           externalUrl: book.externalUrl

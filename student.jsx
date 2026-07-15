@@ -14,7 +14,15 @@ export default function StudentDashboard({ session, homeResetKey }) {
   const [error, setError] = useState("");
 
   const load = () => api.student.dashboard().then(setData).catch((err) => setError(err.message));
-  useEffect(load, []);
+  useEffect(() => {
+    void load();
+  }, []);
+  useEffect(() => {
+    const socket = getSocket();
+    const refresh = () => void load();
+    socket?.on("content:updated", refresh);
+    return () => socket?.off("content:updated", refresh);
+  }, []);
   useEffect(() => setTab("home"), [homeResetKey]);
 
   if (!data && !error) return <Loading />;

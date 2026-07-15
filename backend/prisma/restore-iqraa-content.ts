@@ -8,56 +8,65 @@ const academy = {
   tagline: "أكاديمية تأسيس اللغة العربية والقرآن الكريم",
   project: "مشروع الحافظ الصغير",
   channel: "قناة الكُتَّاب — مناهج اقرأ ورتل",
-  author: "د/ عبد الرحمن عبد الباقي",
+  author: "د/ عبدالرحمن عبدالباقي",
   description:
     "منهج يؤهّل الطالب لقراءة اللغة العربية قراءة صحيحة متقنة بطريقة سهلة مبسطة وفي فترة زمنية قصيرة؛ ينتقل بعدها للقراءة الصحيحة من المصحف الشريف، ثم لحفظ القرآن الكريم بمنهج منضبط بخطة زمنية مدروسة.",
   phone: "0593781376",
   whatsapp: "0593781376",
   emails: ["kttababdelbaky@gmail.com", "boda2010100@gmail.com"],
-  countries: ["مصر", "السعودية", "الكويت"],
+  countries: [],
   modes: ["أون لاين", "حضوري"],
   groups: ["حلقات البنين", "حلقات البنات"],
-  schedule: "ثلاثة أيام في الأسبوع",
-  packagePrice: 480
+  schedule: "سلسلة لتعليم القراءة والكتابة والإملاء وتحسين الخط وحفظ القرآن الكريم",
+  packagePrice: 0
 };
 
 const levels = [
   {
-    code: "level-1",
-    title: "المستوى الأول",
-    subtitle: "الجزء الأول الخاص بالقراءة",
+    code: "pre-level",
+    title: "المستوى التمهيدي",
+    subtitle: "الحروف المجردة وأشكالها",
     color: "primary",
     order: 1,
     chapters: [
       {
-        code: "c1",
-        title: "الباب الأول: الحروف المجردة ورسمها",
+        code: "p1",
+        title: "الحروف المجردة وأشكالها",
         order: 1,
-        lessons: ["الحروف المجردة وأسماؤها", "رسم الحرف في مواضع الكلمة"]
+        lessons: ["تعرف الحروف", "أشكال الحروف في مواضع الكلمة"]
+      }
+    ]
+  },
+  {
+    code: "level-1",
+    title: "المستوى الأول",
+    subtitle: "الحركات والمدود والسكون",
+    color: "secondary",
+    order: 2,
+    chapters: [
+      {
+        code: "c1",
+        title: "حركة الفتح والمد بالألف",
+        order: 1,
+        lessons: ["حركة الفتح", "المد بالألف"]
       },
       {
         code: "c2",
-        title: "الباب الثاني: حركة الفتح والمد بالألف",
+        title: "حركة الكسر والمد بالياء",
         order: 2,
-        lessons: ["حركة الفتح والتدريبات عليها", "المد بالألف والتدريبات عليه"]
+        lessons: ["حركة الكسر", "المد بالياء"]
       },
       {
         code: "c3",
-        title: "الباب الثالث: حركة الكسر والمد بالياء",
+        title: "حركة الضم والمد بالواو",
         order: 3,
-        lessons: ["حركة الكسر والتدريبات عليها", "المد بالياء والتدريبات عليه"]
+        lessons: ["حركة الضم", "المد بالواو"]
       },
       {
         code: "c4",
-        title: "الباب الرابع: حركة الضم والمد بالواو",
+        title: "السكون",
         order: 4,
-        lessons: ["حركة الضم والتدريبات عليها", "المد بالواو والتدريبات عليه"]
-      },
-      {
-        code: "c5",
-        title: "الباب الخامس: علامة السكون",
-        order: 5,
-        lessons: ["كيفية نطق السكون والتدريبات عليه", "أمثلة قرآنية على رسم السكون العثماني"]
+        lessons: ["نطق السكون", "التدريب على السكون"]
       }
     ]
   },
@@ -65,8 +74,8 @@ const levels = [
     code: "level-2",
     title: "المستوى الثاني",
     subtitle: "التنوين والشدّة ورسم الهمزات",
-    color: "secondary",
-    order: 2,
+    color: "accent",
+    order: 3,
     chapters: [
       {
         code: "t1",
@@ -82,15 +91,9 @@ const levels = [
       },
       {
         code: "t3",
-        title: "ثالثًا: همزة الوصل",
+        title: "ثالثًا: رسم الهمزات",
         order: 3,
-        lessons: ["اللام الشمسية والقمرية", "همزة الوصل في الأسماء", "همزة الوصل في الأفعال"]
-      },
-      {
-        code: "t4",
-        title: "رابعًا: همزة القطع",
-        order: 4,
-        lessons: ["رسمها أول الكلمة", "رسمها وسط الكلمة", "رسمها آخر الكلمة"]
+        lessons: ["همزة الوصل", "همزة القطع"]
       }
     ]
   }
@@ -103,8 +106,8 @@ const lessons = [
     description: "تعرّف على الحرف الأول من الحروف الهجائية، شكله ونطقه.",
     duration: "8:24",
     order: 1,
-    levelCode: "level-1",
-    chapterCode: "c1"
+    levelCode: "pre-level",
+    chapterCode: "p1"
   },
   {
     code: "L02",
@@ -112,8 +115,8 @@ const lessons = [
     description: "حرف الباء بنقطته من الأسفل، ومواضعه في الكلمة.",
     duration: "7:50",
     order: 2,
-    levelCode: "level-1",
-    chapterCode: "c1"
+    levelCode: "pre-level",
+    chapterCode: "p1"
   },
   {
     code: "L03",
@@ -121,8 +124,8 @@ const lessons = [
     description: "تمييز التاء عن الثاء، ومواضع كتابتها.",
     duration: "8:10",
     order: 3,
-    levelCode: "level-1",
-    chapterCode: "c1"
+    levelCode: "pre-level",
+    chapterCode: "p1"
   },
   {
     code: "L04",
@@ -131,7 +134,7 @@ const lessons = [
     duration: "9:15",
     order: 4,
     levelCode: "level-1",
-    chapterCode: "c2"
+    chapterCode: "c1"
   },
   {
     code: "L05",
@@ -140,7 +143,7 @@ const lessons = [
     duration: "10:02",
     order: 5,
     levelCode: "level-1",
-    chapterCode: "c2"
+    chapterCode: "c1"
   },
   {
     code: "L06",
@@ -149,7 +152,7 @@ const lessons = [
     duration: "8:45",
     order: 6,
     levelCode: "level-1",
-    chapterCode: "c3"
+    chapterCode: "c2"
   },
   {
     code: "L07",
@@ -158,7 +161,7 @@ const lessons = [
     duration: "9:30",
     order: 7,
     levelCode: "level-1",
-    chapterCode: "c3"
+    chapterCode: "c2"
   },
   {
     code: "L08",
@@ -167,7 +170,7 @@ const lessons = [
     duration: "8:55",
     order: 8,
     levelCode: "level-1",
-    chapterCode: "c4"
+    chapterCode: "c3"
   }
 ];
 
@@ -225,75 +228,84 @@ const quizSeeds = {
 const books = [
   {
     code: "b1",
-    title: "كتاب المستوى الأول",
-    subtitle: "الجزء الأول للقراءة",
+    title: "دفتر حروف الهجاء",
+    subtitle: "",
     color: "var(--grad-1)",
-    price: 90,
-    level: "أساسي",
-    soon: false
+    price: 0,
+    level: "المستوى التمهيدي ١",
+    soon: false,
+    displayOrder: 1
   },
   {
     code: "b2",
-    title: "كتاب المستوى الثاني",
-    subtitle: "التنوين والشدة والهمزات",
+    title: "دفتر حروف الهجاء وأشكالها",
+    subtitle: "",
     color: "var(--grad-2)",
-    price: 90,
-    level: "متوسط",
-    soon: false
+    price: 0,
+    level: "المستوى التمهيدي ٢",
+    soon: false,
+    displayOrder: 2
   },
   {
     code: "b3",
-    title: "دفتر الحروف المجردة",
-    subtitle: "أوراق عمل المستوى الأول",
+    title: "كتاب المستوى الأول",
+    subtitle: "",
     color: "var(--grad-3)",
-    price: 60,
-    level: "تطبيق",
-    soon: false
+    price: 0,
+    level: "المستوى الأول",
+    soon: false,
+    displayOrder: 3
   },
   {
     code: "b4",
-    title: "دفتر أشكال الحروف",
-    subtitle: "أوراق عمل المستوى الأول",
+    title: "أوراق عمل المستوى الأول",
+    subtitle: "",
     color: "linear-gradient(135deg,#6c63ff,#ff5e8a)",
-    price: 60,
-    level: "تطبيق",
-    soon: false
+    price: 0,
+    level: "المستوى الأول",
+    soon: false,
+    displayOrder: 4
   },
   {
     code: "b5",
-    title: "الحركات والمدود والسكون",
-    subtitle: "أوراق عمل المستوى الأول",
+    title: "المستوى الثاني",
+    subtitle: "",
     color: "linear-gradient(135deg,#ffc847,#ff7a45)",
-    price: 60,
-    level: "تطبيق",
-    soon: false
+    price: 0,
+    level: "المستوى الثاني",
+    soon: false,
+    displayOrder: 5
   },
   {
     code: "b6",
     title: "أوراق عمل المستوى الثاني",
-    subtitle: "التنوين والشدة ورسم الهمزات",
+    subtitle: "",
     color: "linear-gradient(135deg,#2bb673,#4aa6ff)",
-    price: 60,
-    level: "تطبيق",
-    soon: false
+    price: 0,
+    level: "المستوى الثاني",
+    soon: false,
+    displayOrder: 6
   },
   {
     code: "b7",
     title: "دليل المعلم",
-    subtitle: "إرشادات وتوجيهات تربوية",
+    subtitle: "",
     color: "linear-gradient(135deg,#1f1a3d,#6c63ff)",
-    price: 80,
+    price: 0,
     level: "للمعلم",
-    soon: false
+    soon: false,
+    displayOrder: 7
   },
   {
     code: "b8",
-    title: "التجويد الميسر للأطفال",
-    subtitle: "تحت الطبع — قريبًا",
-    color: "linear-gradient(135deg,#b08a3e,#2e7d5b)",
-    price: 100,
-    level: "تجويد",
-    soon: true
+    title: "التجويد الميسر",
+    subtitle: "تحت الطبع",
+    color: "linear-gradient(135deg,#2bb673,#4aa6ff)",
+    price: 0,
+    level: "",
+    soon: true,
+    displayOrder: 8,
+    coverPath: "/uploads/catalog-tajweed.jfif"
   }
 ];
 
@@ -307,10 +319,13 @@ const badges = [
 ];
 
 const channelVideos = [
-  { code: "v1", title: "افتتاح قناة الكُتَّاب — مناهج اقرأ ورتل", views: "12K", duration: "2:48" },
-  { code: "v2", title: "كيف يبدأ تأسيس طفلك في اللغة العربية؟", views: "8.5K", duration: "5:12" },
-  { code: "v3", title: "محتويات حقيبة مناهج اقرأ ورتل", views: "6.1K", duration: "4:30" },
-  { code: "v4", title: "نموذج من شرح الحروف للأطفال", views: "9.7K", duration: "6:18" }
+  { code: "v1", title: "افتتاح قناة الكُتَّاب — مناهج اقرأ ورتل", views: "12K", duration: "2:48", youtubeId: null, placement: "library" },
+  { code: "v2", title: "كيف يبدأ تأسيس طفلك في اللغة العربية؟", views: "8.5K", duration: "5:12", youtubeId: null, placement: "library" },
+  { code: "v3", title: "محتويات حقيبة مناهج اقرأ ورتل", views: "6.1K", duration: "4:30", youtubeId: null, placement: "library" },
+  { code: "v4", title: "نموذج من شرح الحروف للأطفال", views: "9.7K", duration: "6:18", youtubeId: null, placement: "library" },
+  { code: "video-testimonials", title: "قالوا عن المنهج", views: null, duration: null, youtubeId: "ZMCmG-N7_Gs", placement: "testimonials" },
+  { code: "video-bag", title: "محتويات الحقيبة والكتب", views: null, duration: null, youtubeId: "IfI31N2bhHA", placement: "bag" },
+  { code: "video-outcomes", title: "ثمرة مناهج اقرأ ورتل", views: null, duration: null, youtubeId: "EkaqnwrdUo0", placement: "outcomes" }
 ];
 
 async function restoreAcademySettings() {
@@ -426,11 +441,13 @@ async function restoreBooks() {
         color: book.color,
         price: book.price,
         level: book.level,
-        soon: book.soon
+        soon: book.soon,
+        displayOrder: book.displayOrder,
+        coverPath: book.coverPath
       },
       create: {
         ...book,
-        coverPath: null,
+        coverPath: book.coverPath || null,
         filePath: null,
         externalUrl: null
       }
@@ -459,12 +476,11 @@ async function restoreChannelVideos() {
       update: {
         title: video.title,
         views: video.views,
-        duration: video.duration
+        duration: video.duration,
+        youtubeId: video.youtubeId,
+        placement: video.placement
       },
-      create: {
-        ...video,
-        youtubeId: null
-      }
+      create: video
     });
   }
 }

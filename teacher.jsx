@@ -12,7 +12,9 @@ export default function TeacherDashboard({ session, homeResetKey }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
   const load = () => api.teacher.dashboard().then(setData).catch((err) => setError(err.message));
-  useEffect(load, []);
+  useEffect(() => {
+    void load();
+  }, []);
   useEffect(() => setTab("home"), [homeResetKey]);
 
   if (!data && !error) return <Loading />;

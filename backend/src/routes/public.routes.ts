@@ -25,8 +25,8 @@ publicRouter.get("/public/home", async (_req, res, next) => {
           }
         }
       }),
-      prisma.book.findMany({ orderBy: { code: "asc" } }),
-      prisma.channelVideo.findMany({ orderBy: { code: "asc" } })
+      prisma.book.findMany({ orderBy: [{ displayOrder: "asc" }, { createdAt: "asc" }] }),
+      prisma.channelVideo.findMany({ orderBy: [{ placement: "asc" }, { code: "asc" }] })
     ]);
 
     res.json(
@@ -48,9 +48,9 @@ publicRouter.get("/public/home", async (_req, res, next) => {
           title: book.title,
           subtitle: book.subtitle,
           color: book.color,
-          price: book.price,
           level: book.level,
           soon: book.soon,
+          displayOrder: book.displayOrder,
           coverPath: book.coverPath,
           filePath: book.filePath,
           externalUrl: book.externalUrl
@@ -61,7 +61,8 @@ publicRouter.get("/public/home", async (_req, res, next) => {
           title: video.title,
           views: video.views,
           duration: video.duration,
-          youtubeId: video.youtubeId
+          youtubeId: video.youtubeId,
+          placement: video.placement
         }))
       })
     );

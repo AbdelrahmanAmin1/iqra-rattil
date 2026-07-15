@@ -3,63 +3,73 @@ export const ACADEMY = {
   tagline: "أكاديمية تأسيس اللغة العربية والقرآن الكريم",
   project: "مشروع الحافظ الصغير",
   channel: "قناة الكُتَّاب — مناهج اقرأ ورتل",
-  author: "د/ عبد الرحمن عبد الباقي",
+  author: "د/ عبدالرحمن عبدالباقي",
   description:
     "منهج يؤهّل الطالب لقراءة اللغة العربية قراءة صحيحة متقنة بطريقة سهلة مبسطة وفي فترة زمنية قصيرة؛ ينتقل بعدها للقراءة الصحيحة من المصحف الشريف، ثم لحفظ القرآن الكريم بمنهج منضبط بخطة زمنية مدروسة.",
   phone: "0593781376",
   whatsapp: "0593781376",
   emails: ["kttababdelbaky@gmail.com", "boda2010100@gmail.com"],
-  countries: ["مصر", "السعودية", "الكويت"],
+  countries: [],
   modes: ["أون لاين", "حضوري"],
   groups: ["حلقات البنين", "حلقات البنات"],
-  schedule: "ثلاثة أيام في الأسبوع",
-  packagePrice: 480
+  schedule: "سلسلة لتعليم القراءة والكتابة والإملاء وتحسين الخط وحفظ القرآن الكريم",
+  packagePrice: 0
 };
 
 export const CURRICULUM = [
   {
-    id: "level-1",
-    title: "المستوى الأول",
-    subtitle: "الجزء الأول الخاص بالقراءة",
+    id: "pre-level",
+    title: "المستوى التمهيدي",
+    subtitle: "الحروف المجردة وأشكالها",
     color: "primary",
     chapters: [
-      { id: "c1", title: "الباب الأول: الحروف المجردة ورسمها", lessons: ["الحروف المجردة وأسماؤها", "رسم الحرف في مواضع الكلمة"] },
-      { id: "c2", title: "الباب الثاني: حركة الفتح والمد بالألف", lessons: ["حركة الفتح والتدريبات عليها", "المد بالألف والتدريبات عليه"] },
-      { id: "c3", title: "الباب الثالث: حركة الكسر والمد بالياء", lessons: ["حركة الكسر والتدريبات عليها", "المد بالياء والتدريبات عليه"] },
-      { id: "c4", title: "الباب الرابع: حركة الضم والمد بالواو", lessons: ["حركة الضم والتدريبات عليها", "المد بالواو والتدريبات عليه"] },
-      { id: "c5", title: "الباب الخامس: علامة السكون", lessons: ["كيفية نطق السكون والتدريبات عليه", "أمثلة قرآنية على رسم السكون العثماني"] }
+      { id: "p1", title: "الحروف المجردة وأشكالها", lessons: ["تعرف الحروف", "أشكال الحروف في مواضع الكلمة"] }
+    ]
+  },
+  {
+    id: "level-1",
+    title: "المستوى الأول",
+    subtitle: "الحركات والمدود والسكون",
+    color: "secondary",
+    chapters: [
+      { id: "c1", title: "حركة الفتح والمد بالألف", lessons: ["حركة الفتح", "المد بالألف"] },
+      { id: "c2", title: "حركة الكسر والمد بالياء", lessons: ["حركة الكسر", "المد بالياء"] },
+      { id: "c3", title: "حركة الضم والمد بالواو", lessons: ["حركة الضم", "المد بالواو"] },
+      { id: "c4", title: "السكون", lessons: ["نطق السكون", "التدريب على السكون"] }
     ]
   },
   {
     id: "level-2",
     title: "المستوى الثاني",
     subtitle: "التنوين والشدّة ورسم الهمزات",
-    color: "secondary",
+    color: "accent",
     chapters: [
       { id: "t1", title: "أولًا: التنوين بأنواعه الثلاثة", lessons: ["التنوين المفتوح", "التنوين المكسور", "التنوين المضموم"] },
       { id: "t2", title: "ثانيًا: الشدّة بدروسها التسعة", lessons: ["الشدّة مع الفتح/الكسر/الضم", "الشدّة مع المدود الثلاثة", "الشدّة مع التنوين"] },
-      { id: "t3", title: "ثالثًا: همزة الوصل", lessons: ["اللام الشمسية والقمرية", "همزة الوصل في الأسماء", "همزة الوصل في الأفعال"] },
-      { id: "t4", title: "رابعًا: همزة القطع", lessons: ["رسمها أول الكلمة", "رسمها وسط الكلمة", "رسمها آخر الكلمة"] }
+      { id: "t3", title: "ثالثًا: رسم الهمزات", lessons: ["همزة الوصل", "همزة القطع"] }
     ]
   }
 ];
 
 export const BOOKS = [
-  { id: "b1", title: "كتاب المستوى الأول", subtitle: "الجزء الأول للقراءة", color: "var(--grad-1)", price: 90, level: "أساسي" },
-  { id: "b2", title: "كتاب المستوى الثاني", subtitle: "التنوين والشدة والهمزات", color: "var(--grad-2)", price: 90, level: "متوسط" },
-  { id: "b3", title: "دفتر الحروف المجردة", subtitle: "أوراق عمل المستوى الأول", color: "var(--grad-3)", price: 60, level: "تطبيق" },
-  { id: "b4", title: "دفتر أشكال الحروف", subtitle: "أوراق عمل المستوى الأول", color: "linear-gradient(135deg,#6c63ff,#ff5e8a)", price: 60, level: "تطبيق" },
-  { id: "b5", title: "الحركات والمدود والسكون", subtitle: "أوراق عمل المستوى الأول", color: "linear-gradient(135deg,#ffc847,#ff7a45)", price: 60, level: "تطبيق" },
-  { id: "b6", title: "أوراق عمل المستوى الثاني", subtitle: "التنوين والشدة ورسم الهمزات", color: "linear-gradient(135deg,#2bb673,#4aa6ff)", price: 60, level: "تطبيق" },
-  { id: "b7", title: "دليل المعلم", subtitle: "إرشادات وتوجيهات تربوية", color: "linear-gradient(135deg,#1f1a3d,#6c63ff)", price: 80, level: "للمعلم" },
-  { id: "b8", title: "التجويد الميسر للأطفال", subtitle: "تحت الطبع — قريبًا", color: "linear-gradient(135deg,#b08a3e,#2e7d5b)", price: 100, level: "تجويد", soon: true }
+  { id: "b1", title: "دفتر حروف الهجاء", subtitle: "", color: "var(--grad-1)", level: "المستوى التمهيدي ١", displayOrder: 1 },
+  { id: "b2", title: "دفتر حروف الهجاء وأشكالها", subtitle: "", color: "var(--grad-2)", level: "المستوى التمهيدي ٢", displayOrder: 2 },
+  { id: "b3", title: "كتاب المستوى الأول", subtitle: "", color: "var(--grad-3)", level: "المستوى الأول", displayOrder: 3 },
+  { id: "b4", title: "أوراق عمل المستوى الأول", subtitle: "", color: "linear-gradient(135deg,#6c63ff,#ff5e8a)", level: "المستوى الأول", displayOrder: 4 },
+  { id: "b5", title: "المستوى الثاني", subtitle: "", color: "linear-gradient(135deg,#ffc847,#ff7a45)", level: "المستوى الثاني", displayOrder: 5 },
+  { id: "b6", title: "أوراق عمل المستوى الثاني", subtitle: "", color: "linear-gradient(135deg,#2bb673,#4aa6ff)", level: "المستوى الثاني", displayOrder: 6 },
+  { id: "b7", title: "دليل المعلم", subtitle: "", color: "linear-gradient(135deg,#1f1a3d,#6c63ff)", level: "للمعلم", displayOrder: 7 },
+  { id: "b8", title: "التجويد الميسر", subtitle: "تحت الطبع", color: "linear-gradient(135deg,#2bb673,#4aa6ff)", level: "", soon: true, displayOrder: 8 },
 ];
 
 export const CHANNEL_VIDEOS = [
-  { id: "v1", title: "افتتاح قناة الكُتَّاب — مناهج اقرأ ورتل", views: "12K", duration: "2:48" },
-  { id: "v2", title: "كيف يبدأ تأسيس طفلك في اللغة العربية؟", views: "8.5K", duration: "5:12" },
-  { id: "v3", title: "محتويات حقيبة مناهج اقرأ ورتل", views: "6.1K", duration: "4:30" },
-  { id: "v4", title: "نموذج من شرح الحروف للأطفال", views: "9.7K", duration: "6:18" }
+  { id: "v1", title: "افتتاح قناة الكُتَّاب — مناهج اقرأ ورتل", views: "12K", duration: "2:48", placement: "library" },
+  { id: "v2", title: "كيف يبدأ تأسيس طفلك في اللغة العربية؟", views: "8.5K", duration: "5:12", placement: "library" },
+  { id: "v3", title: "محتويات حقيبة مناهج اقرأ ورتل", views: "6.1K", duration: "4:30", placement: "library" },
+  { id: "v4", title: "نموذج من شرح الحروف للأطفال", views: "9.7K", duration: "6:18", placement: "library" },
+  { id: "video-testimonials", title: "قالوا عن المنهج", youtubeId: "ZMCmG-N7_Gs", placement: "testimonials" },
+  { id: "video-bag", title: "محتويات الحقيبة والكتب", youtubeId: "IfI31N2bhHA", placement: "bag" },
+  { id: "video-outcomes", title: "ثمرة مناهج اقرأ ورتل", youtubeId: "EkaqnwrdUo0", placement: "outcomes" }
 ];
 
 export const BADGES = [

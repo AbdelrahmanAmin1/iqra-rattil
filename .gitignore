@@ -5,4 +5,7 @@ dist
 backend/node_modules
 backend/dist
 backend/uploads
+!backend/uploads/
+backend/uploads/*
+!backend/uploads/catalog-tajweed.jfif
 *.log

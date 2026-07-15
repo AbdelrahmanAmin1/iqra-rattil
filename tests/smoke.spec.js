@@ -1,5 +1,58 @@
 import { expect, test } from "@playwright/test";
 
+test("public home exposes the three landing video placements", async ({ request }) => {
+  const response = await request.get("http://127.0.0.1:4000/api/public/home");
+  expect(response.ok()).toBeTruthy();
+  const videos = (await response.json()).data.channelVideos;
+
+  expect(videos).toEqual(expect.arrayContaining([
+    expect.objectContaining({ id: "video-testimonials", youtubeId: "ZMCmG-N7_Gs", placement: "testimonials" }),
+    expect.objectContaining({ id: "video-bag", youtubeId: "IfI31N2bhHA", placement: "bag" }),
+    expect.objectContaining({ id: "video-outcomes", youtubeId: "EkaqnwrdUo0", placement: "outcomes" })
+  ]));
+});
+
+test("landing video cards play inline without leaving the page", async ({ page }) => {
+  await page.goto("/");
+
+  const videos = [
+    { section: "#testimonials", id: "ZMCmG-N7_Gs" },
+    { section: "#bag-video", id: "IfI31N2bhHA" },
+    { section: "#outcomes", id: "EkaqnwrdUo0" }
+  ];
+
+  for (const video of videos) {
+    const player = page.locator(`${video.section} [data-video-id="${video.id}"]`);
+    await expect(player).toBeVisible();
+    await player.getByRole("button").click();
+    await expect(player.locator("iframe")).toHaveAttribute("src", new RegExp(`/embed/${video.id}`));
+  }
+
+  await expect(page).toHaveURL(/\/$/);
+});
+
+test("public catalog uses the database order without book prices", async ({ page }) => {
+  await page.goto("/");
+
+  const cards = page.locator(".book-card");
+  const canonicalTitles = [
+    "\u062f\u0641\u062a\u0631 \u062d\u0631\u0648\u0641 \u0627\u0644\u0647\u062c\u0627\u0621",
+    "\u062f\u0641\u062a\u0631 \u062d\u0631\u0648\u0641 \u0627\u0644\u0647\u062c\u0627\u0621 \u0648\u0623\u0634\u0643\u0627\u0644\u0647\u0627",
+    "\u0643\u062a\u0627\u0628 \u0627\u0644\u0645\u0633\u062a\u0648\u0649 \u0627\u0644\u0623\u0648\u0644",
+    "\u0623\u0648\u0631\u0627\u0642 \u0639\u0645\u0644 \u0627\u0644\u0645\u0633\u062a\u0648\u0649 \u0627\u0644\u0623\u0648\u0644",
+    "\u0627\u0644\u0645\u0633\u062a\u0648\u0649 \u0627\u0644\u062b\u0627\u0646\u064a",
+    "\u0623\u0648\u0631\u0627\u0642 \u0639\u0645\u0644 \u0627\u0644\u0645\u0633\u062a\u0648\u0649 \u0627\u0644\u062b\u0627\u0646\u064a",
+    "\u062f\u0644\u064a\u0644 \u0627\u0644\u0645\u0639\u0644\u0645",
+    "\u0627\u0644\u062a\u062c\u0648\u064a\u062f \u0627\u0644\u0645\u064a\u0633\u0631"
+  ];
+  const renderedTitles = await cards.locator("h3").allTextContents();
+  expect(renderedTitles.filter((title) => canonicalTitles.includes(title))).toEqual(canonicalTitles);
+  await expect(page.locator("body")).not.toContainText("\u062c\u0646\u064a\u0647");
+  const tajweedCard = cards.filter({ hasText: "\u0627\u0644\u062a\u062c\u0648\u064a\u062f \u0627\u0644\u0645\u064a\u0633\u0631" });
+  await expect(tajweedCard).toContainText("\u062a\u062d\u062a \u0627\u0644\u0637\u0628\u0639");
+  await expect(tajweedCard.getByRole("link")).toHaveCount(0);
+});
+
 test("home renders restored backend-driven Iqraa content without crashing", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: /تأسيس صحيح/ })).toBeVisible();

@@ -1,6 +1,30 @@
 export const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
 export const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || API_URL.replace(/\/api\/?$/, "");
 
+const contentRoute = /^\/admin\/(?:books|channel-videos|lessons|curriculum(?:\/|$)|settings$)/;
+
+function broadcastContentUpdate() {
+  if (typeof window === "undefined") return;
+
+  const updatedAt = String(Date.now());
+  localStorage.setItem("iqra_content_updated", updatedAt);
+  window.dispatchEvent(new Event("iqra:content-updated"));
+}
+
+export function subscribeToContentUpdates(handler) {
+  if (typeof window === "undefined") return () => {};
+
+  const onStorage = (event) => {
+    if (event.key === "iqra_content_updated") handler();
+  };
+  window.addEventListener("iqra:content-updated", handler);
+  window.addEventListener("storage", onStorage);
+  return () => {
+    window.removeEventListener("iqra:content-updated", handler);
+    window.removeEventListener("storage", onStorage);
+  };
+}
+
 export const sessionStore = {
   get() {
     try {
@@ -28,7 +52,7 @@ async function request(path, options = {}) {
   const token = sessionStore.token();
   if (token) headers.set("Authorization", `Bearer ${token}`);
 
-  const response = await fetch(`${API_URL}${path}`, { ...options, headers });
+  const response = await fetch(`${API_URL}${path}`, { ...options, headers, cache: "no-store" });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
     const message = payload?.error?.message || "تعذر الاتصال بالخادم";
@@ -37,6 +61,7 @@ async function request(path, options = {}) {
     error.payload = payload;
     throw error;
   }
+  if (options.method && contentRoute.test(path)) broadcastContentUpdate();
   return payload.data;
 }
 
@@ -88,6 +113,7 @@ export const api = {
   },
   admin: {
     dashboard: () => api.get("/admin/dashboard"),
+    settings: () => api.get("/admin/settings"),
     approvals: () => api.get("/admin/approvals"),
     approve: (id) => api.post(`/admin/approvals/${id}/approve`, {}),
     reject: (id) => api.post(`/admin/approvals/${id}/reject`, {}),
@@ -99,6 +125,7 @@ export const api = {
     books: () => api.get("/admin/books"),
     createBook: (formData) => api.upload("/admin/books", formData),
     updateBook: (id, formData) => api.upload(`/admin/books/${id}`, formData, "PATCH"),
+    moveBook: (id, direction) => api.post(`/admin/books/${id}/move`, { direction }),
     deleteBook: (id) => api.delete(`/admin/books/${id}`),
     videos: () => api.get("/admin/channel-videos"),
     createVideo: (value) => api.post("/admin/channel-videos", value),

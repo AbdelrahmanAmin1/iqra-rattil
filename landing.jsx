@@ -1,7 +1,13 @@
-import React, { useEffect, useState } from "react";
-import { api } from "./src/lib/api.js";
+import React, { useCallback, useEffect, useState } from "react";
+import { api, subscribeToContentUpdates } from "./src/lib/api.js";
 import { LETTERS } from "./data.js";
-import { BookGrid, EmptyState, ErrorBanner, Icon, Owl, PublicTopbar, SectionTitle, Stars, assetUrl, mergeHomeContent, youtubeUrl } from "./shared.jsx";
+import { BookGrid, ClickToPlayVideo, ErrorBanner, Icon, Owl, PublicTopbar, SectionTitle, Stars, mergeHomeContent } from "./shared.jsx";
+
+const HERO_CHIPS = [
+  "مشروع الحافظ الصغير",
+  "سلسلة لتعليم القراءة والكتابة والإملاء وتحسين الخط وحفظ القرآن الكريم",
+  "حقيبة تعليمية متكاملة"
+];
 
 export default function LandingPage({ onLogin }) {
   const [remote, setRemote] = useState(null);
@@ -9,13 +15,34 @@ export default function LandingPage({ onLogin }) {
   const [lead, setLead] = useState({ name: "", phone: "", message: "" });
   const [sent, setSent] = useState("");
 
-  useEffect(() => {
-    api.public.home().then(setRemote).catch((err) => setError(err.message));
+  const loadHome = useCallback(async () => {
+    try {
+      setRemote(await api.public.home());
+      setError("");
+    } catch (err) {
+      setError(err.message);
+    }
   }, []);
+
+  useEffect(() => {
+    void loadHome();
+    const interval = window.setInterval(() => void loadHome(), 30_000);
+    const onFocus = () => void loadHome();
+    window.addEventListener("focus", onFocus);
+    const unsubscribe = subscribeToContentUpdates(loadHome);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
+      unsubscribe();
+    };
+  }, [loadHome]);
 
   const home = mergeHomeContent(remote);
   const academy = home.academy;
-  const chips = [academy.project, academy.author, academy.schedule, home.packagePrice ? `الحقيبة ${home.packagePrice} جنيه` : null].filter(Boolean);
+  const chips = [academy.project, academy.schedule, HERO_CHIPS[2]].filter(Boolean);
+  const packageBooks = home.books || [];
+  const curriculumLevels = home.curriculum || [];
+  const videosFor = (placement) => (home.channelVideos || []).filter((video) => video.placement === placement);
 
   const sendLead = async (event) => {
     event.preventDefault();
@@ -32,7 +59,7 @@ export default function LandingPage({ onLogin }) {
 
   return (
     <div className="app-shell" dir="rtl">
-      <PublicTopbar onLogin={onLogin} />
+      <PublicTopbar onLogin={onLogin} academy={academy} />
       <main>
         <section id="home" className="container landing-hero">
           <span className="blob" style={{ width: 260, height: 260, background: "var(--accent)", top: 90, insetInlineStart: "20%" }} />
@@ -85,93 +112,52 @@ export default function LandingPage({ onLogin }) {
           <div className="feature-strip">
             <article className="card flat deco-dots">
               <span className="chip primary">01</span>
-              <h3 className="mt-16">تأسيس القراءة</h3>
-              <p className="mt-8">الحروف، الحركات، المدود، السكون، الشدة، والتنوين بتدرج واضح.</p>
+              <h3 className="mt-16">تأسيس القراءة والإملاء</h3>
+              <p className="mt-8">الحروف، الحركات، المدود، السكون، الشدة، والتنوين والشدة وهمزة الوصل واللام الشمسية والقمرية ورسم الهمزات</p>
             </article>
             <article className="card flat deco-geo">
               <span className="chip success">02</span>
               <h3 className="mt-16">انتقال للمصحف</h3>
-              <p className="mt-8">بعد ضبط القراءة ينتقل الطالب للقراءة الصحيحة من المصحف الشريف.</p>
+              <p className="mt-8">بعد ضبط القراءة ينتقل الطالب للقراءة الصحيحة من المصحف الشريف ومن ثم حفظه في سن مبكرة.</p>
             </article>
             <article className="card flat">
               <span className="chip purple">03</span>
               <h3 className="mt-16">خطة حفظ منضبطة</h3>
-              <p className="mt-8">حلقات بنين وبنات، أون لاين أو حضوري، ثلاثة أيام في الأسبوع.</p>
+              <p className="mt-8">حلقات للبنين والبنات على أيدي متخصصين محترفين</p>
             </article>
           </div>
         </section>
 
-        <ProjectIntro academy={academy} levels={home.curriculum} />
-
         <div className="container"><ErrorBanner error={error} /></div>
 
+        <LandingVideoSection id="outcomes" eyebrow="المنهج" title="ثمرة مناهج اقرأ ورتل" videos={videosFor("outcomes")} />
+
         <section id="curriculum" className="container landing-section">
-          <SectionTitle eyebrow="المنهج" title="المستويات التعليمية لمشروع اقرأ" body="نفس مستويات اقرأ ورتّل الأصلية، وتُقرأ الآن من قاعدة البيانات عند توفرها." />
-          <div className="curriculum-grid">
-            {home.curriculum.map((level) => (
-              <article key={level.id} className="card elev">
-                <span className={`chip ${level.color === "secondary" ? "success" : "primary"}`}>{level.subtitle || level.title}</span>
+          <SectionTitle eyebrow="المنهج" title="المستويات التعليمية لمشروع اقرأ و رتل" />
+          <div className="curriculum-grid curriculum-grid-three">
+            {curriculumLevels.map((level, index) => (
+              <article key={level.id} className="card elev curriculum-summary-card">
+                <span className={`chip ${["primary", "success", "purple"][index % 3]}`}>{String(index + 1).padStart(2, "0")}</span>
                 <h3 className="mt-16 f-24">{level.title}</h3>
-                <div className="col mt-16">
-                  {(level.chapters || []).map((chapter) => (
-                    <div key={chapter.id} className="card flat chapter-card">
-                      <div className="bold">{chapter.title}</div>
-                      <div className="muted f-13 mt-8">{(chapter.lessons || []).join("، ")}</div>
-                    </div>
-                  ))}
-                </div>
+                <p className="mt-16">{level.subtitle || level.chapters?.map((chapter) => chapter.title).join(" — ") || "بانتظار المحتوى"}</p>
               </article>
             ))}
           </div>
         </section>
 
         <section id="books" className="container landing-section">
-          <SectionTitle eyebrow="الحقيبة" title="كتب وأوراق عمل مناهج اقرأ ورتّل" body="تبقى بيانات المشروع كما هي، وعند رفع الملفات أو إضافة الروابط تصبح متاحة للطلاب." />
-          <div className="package-summary">
+          <div className="page-head">
             <div>
-              <span className="chip accent">سعر الحقيبة</span>
-              <h3>{home.packagePrice} جنيه</h3>
-              <p>تشمل كتب المستويات وأوراق العمل والتدريبات، مع إمكانية طلب الملفات أو النسخ المطبوعة.</p>
-            </div>
-            <div className="row">
-              {(academy.modes || []).map((item) => <span className="chip success" key={item}>{item}</span>)}
-              {(academy.groups || []).map((item) => <span className="chip primary" key={item}>{item}</span>)}
-              {(academy.countries || []).map((item) => <span className="chip" key={item}>{item}</span>)}
+              <span className="chip primary">الحقيبة</span>
+              <h2 className="mt-16">{`تتكون من ${packageBooks.length} كتب`}</h2>
             </div>
           </div>
-          <BookGrid books={home.books} />
+          <BookGrid books={packageBooks} />
         </section>
 
-        <section id="channel" className="container landing-section">
-          <SectionTitle eyebrow="القناة" title={academy.channel} body="عناوين القناة محفوظة كما كانت، وروابط يوتيوب الحقيقية تضاف من لوحة المشرف." />
-          {home.channelVideos.length ? (
-            <div className="video-grid">
-              {home.channelVideos.map((video) => {
-                const thumb = video.youtubeId ? `https://img.youtube.com/vi/${video.youtubeId}/hqdefault.jpg` : "";
-                return (
-                  <article key={video.id} className="video-card">
-                    <div className="video-thumb" style={thumb ? { backgroundImage: `url(${thumb})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}>
-                      <div className="play">
-                        {video.youtubeId ? (
-                          <a className="btn-play" href={youtubeUrl(video.youtubeId)} target="_blank" rel="noreferrer" aria-label={`مشاهدة ${video.title}`}>▶</a>
-                        ) : (
-                          <span className="btn-play" style={{ color: "var(--muted)" }}>…</span>
-                        )}
-                      </div>
-                    </div>
-                    <div style={{ padding: 16 }}>
-                      <h3 className="f-18">{video.title}</h3>
-                      <div className="row mt-8">
-                        <span className="chip">{video.duration || "بدون مدة"}</span>
-                        {video.views ? <span className="chip">{video.views} مشاهدة</span> : null}
-                      </div>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          ) : <EmptyState title="لا توجد فيديوهات" />}
-        </section>
+        <LandingVideoSection id="bag-video" eyebrow="الحقيبة" title="محتويات الحقيبة والكتب" videos={videosFor("bag")} />
+
+        <LandingVideoSection id="testimonials" eyebrow="آراء وتجارب" title="قالوا عن المنهج" videos={videosFor("testimonials")} />
 
         <RoleLoginSection onLogin={onLogin} />
 
@@ -182,7 +168,6 @@ export default function LandingPage({ onLogin }) {
               <h2 className="mt-16">احجز مكان طفلك أو اطلب الحقيبة</h2>
               <p className="mt-16">الهاتف: {academy.phone} — واتساب: {academy.whatsapp}</p>
               <div className="row mt-16">
-                {(academy.countries || []).map((item) => <span className="chip" key={item}>{item}</span>)}
                 {(academy.modes || []).map((item) => <span className="chip success" key={item}>{item}</span>)}
                 {(academy.groups || []).map((item) => <span className="chip primary" key={item}>{item}</span>)}
               </div>
@@ -213,52 +198,15 @@ export default function LandingPage({ onLogin }) {
   );
 }
 
-function ProjectIntro({ academy, levels }) {
-  const steps = (levels || []).slice(0, 4).map((level, index) => ({
-    id: level.id || index,
-    title: level.title,
-    subtitle: level.subtitle || level.description || academy.project
-  }));
-  const fallback = [
-    { id: "letters", title: "تأسيس الحروف", subtitle: "تعلم الحرف والحركة والصوت" },
-    { id: "reading", title: "القراءة", subtitle: "تدرج حتى قراءة الكلمات والجمل" },
-    { id: "quran", title: "المصحف", subtitle: "انتقال آمن للمصحف الشريف" },
-    { id: "hifz", title: "الحفظ", subtitle: "خطة حفظ ومراجعة منظمة" }
-  ];
-  const items = steps.length ? steps : fallback;
+function LandingVideoSection({ id, eyebrow, title, videos }) {
+  if (!videos.length) return null;
   return (
-    <section className="container landing-section project-intro">
-      <div>
-        <span className="chip primary">{academy.project}</span>
-        <h2 className="mt-16">رحلة الطفل من الحرف إلى التلاوة</h2>
-        <p className="mt-16">{academy.description}</p>
-        <div className="intro-bullets mt-24">
-          <Bullet n="1" title="تأسيس لغوي متدرج" />
-          <Bullet n="2" title="حلقات أونلاين أو حضوري" />
-          <Bullet n="3" title="متابعة للقرآن والحفظ" />
-        </div>
-      </div>
-      <div className="card elev path-diagram">
-        {items.map((item, index) => (
-          <div key={item.id} className="path-step">
-            <span>{index + 1}</span>
-            <div>
-              <h3>{item.title}</h3>
-              <p>{item.subtitle}</p>
-            </div>
-          </div>
-        ))}
+    <section id={id} className="container landing-section landing-video-section">
+      <SectionTitle eyebrow={eyebrow} title={title} />
+      <div className={`landing-video-grid ${videos.length === 1 ? "single" : ""}`}>
+        {videos.map((video) => <ClickToPlayVideo key={video.id} video={video} />)}
       </div>
     </section>
-  );
-}
-
-function Bullet({ n, title }) {
-  return (
-    <div className="intro-bullet">
-      <span>{n}</span>
-      <strong>{title}</strong>
-    </div>
   );
 }
 
